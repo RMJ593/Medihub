@@ -7,11 +7,23 @@ import Image from 'react-bootstrap/Image';
 import Row from 'react-bootstrap/Row';
 import {  Link } from 'react-router-dom';
 import Button from 'react-bootstrap/Button';
-import { useLocation} from 'react-router-dom';
+import { useLocation, useNavigate} from 'react-router-dom';
 
 function Home() {
     const location = useLocation();
-    const userId = location.state?.id; 
+    const navigate = useNavigate();
+    const userId = location.state?.name || sessionStorage.getItem('username') || localStorage.getItem('username') ||'Guest';
+    const isAuthenticated = sessionStorage.getItem('username') || localStorage.getItem('authToken');
+    
+    const handleLogout = () => {
+        // Clear all stored authentication data
+        sessionStorage.removeItem('username');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('username');
+        
+        // Redirect to login page
+        navigate('/login');
+    };
     return (
       <>
        <Navbar className="bg-primary">
@@ -19,13 +31,19 @@ function Home() {
         <Navbar.Brand href="#home">MediHub</Navbar.Brand>
         <Navbar.Toggle />
         <Col xs="auto">
-              <Link to ='/login'>
+          {!isAuthenticated ? (
+            <Link to='/login'>
               <Button type="submit">Login</Button>
-              </Link>
-            </Col>
+            </Link>
+          ) : (
+            <Button variant="outline-light" onClick={handleLogout}>
+              Logout
+            </Button>
+          )}
+        </Col>
         <Navbar.Collapse className="justify-content-end">
           <Navbar.Text>
-          Signed in as: <a href="#login">{userId ? userId : 'Guest'}</a> 
+          Signed in as: <a href="#login">{userId}</a> 
           </Navbar.Text>
         </Navbar.Collapse>
       </Container>
@@ -33,21 +51,7 @@ function Home() {
 
         
   
-      {/* <Navbar bg="primary" data-bs-theme="dark">
-          <Container>
-            <Navbar.Brand href="#home">Navbar</Navbar.Brand>
-            <Nav className="me-auto">
-              <Nav.Link href="#home">Home</Nav.Link>
-              <Nav.Link href="#features">Features</Nav.Link>
-              <Nav.Link href="#pricing">Pricing</Nav.Link>
-            </Nav>
-            <Col xs="auto">
-              <Link to ='./mycart.js'>
-              <Button type="submit">Login</Button>
-              </Link>
-            </Col>
-          </Container>
-        </Navbar> */}
+    
   
         
         <Carousel data-bs-theme="dark">
