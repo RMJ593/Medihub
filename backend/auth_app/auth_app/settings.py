@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-sx4_2yc*jcl*3&y!m4)jsj77wzlyqs3$8dyx%_1@7@7%tm(yb%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['medihub-3ni5.onrender.com']
 
 
 # Application definition
