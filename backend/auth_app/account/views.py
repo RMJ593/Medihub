@@ -8,9 +8,11 @@ from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 # from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authentication import TokenAuthentication
+from django.http import HttpResponse
 # from django.core.paginator import Paginator
 # from rest_framework.pagination import PageNumberPagination 
-
+def home(request):
+    return HttpResponse("Welcome to MediHub Backend API 🚀")
 class RegisterAPI(APIView):
     def post(self,request):
         _data = request.data
