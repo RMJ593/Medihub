@@ -111,11 +111,11 @@ function Home() {
             <Image className="servc"src={require('../components/service/medicine.jpg')} roundedCircle />
             </Link>
           </Col>
-          <Col xs={6} md={4}>
+          {/* <Col xs={6} md={4}>
             <Link to="/dah">
             <Image className="servc"src={require('../components/service/home.jpg')} roundedCircle />
             </Link>
-          </Col>
+          </Col> */}
         </Row>
       </Container>
       <br/>
