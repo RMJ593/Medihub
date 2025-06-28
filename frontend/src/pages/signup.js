@@ -13,8 +13,12 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [debugInfo, setDebugInfo] = useState('');
   
-  const navigate = useNavigate();
+  const navigate = (path) => {
+    console.log(`Would navigate to: ${path}`);
+    setDebugInfo(`Navigation to ${path} triggered`);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -51,6 +55,17 @@ const Signup = () => {
     return true;
   };
 
+  const testBackendConnection = async () => {
+    setDebugInfo('Testing backend connection...');
+    try {
+      const response = await fetch('https://medihub-3ni5.onrender.com/api/register/', {
+        method: 'OPTIONS'
+      });
+      setDebugInfo(`Backend connection test: ${response.status} - ${response.statusText}`);
+    } catch (err) {
+      setDebugInfo(`Backend connection failed: ${err.message}`);
+    }
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     // if (formData.password !== formData.confirmPassword) {
@@ -63,6 +78,7 @@ const Signup = () => {
     setLoading(true);
     setError('');
     setSuccess('');
+    setDebugInfo('Starting registration process...');
 
     const submitData = {
       username: formData.username,
@@ -76,25 +92,35 @@ const Signup = () => {
 
     // Prepare data for Django backend (excluding confirmPassword)
     // const { confirmPassword, ...submitData } = formData;
-
+    console.log('🚀 Attempting registration with data:', submitData);
+    setDebugInfo(`Sending request to: https://medihub-3ni5.onrender.com/api/register/`);
     try {
-      const response = await axios.post("https://medihub-3ni5.onrender.com/api/register/", submitData);
+      const response = await fetch('https://medihub-3ni5.onrender.com/api/register/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(submitData),
+        // Add these for CORS debugging
+        mode: 'cors',
+        credentials: 'include'
+      });
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', [...response.headers.entries()]);
+      
+      setDebugInfo(`Response received: ${response.status} ${response.statusText}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('❌ Error response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Success response:', data);
       setSuccess(response.data.message || "Signup successful!");
-      // console.log('Sending request to:', 'http://127.0.0.1:8000/api/register/');
-      // console.log('Request data:', submitData);
-      // const response = await fetch('http://localhost:8000/api/register/', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(submitData)
-      // });
-      // console.log('Response status:', response.status);
-      // console.log('Response headers:', response.headers);
-      // const data = await response.json();
-      // console.log('Response data:', data);
-      // if (response.ok) {
-      //   setSuccess(data.message);
+      setDebugInfo(`Registration successful! Response: ${JSON.stringify(data)}`);
         // Clear form
         setFormData({
           username: '',
@@ -107,51 +133,25 @@ const Signup = () => {
         setTimeout(() => {
           navigate('/login');
         }, 2000);
-      // } else {
-      //   if (data.message && typeof data.message === 'object') {
-      //     // Handle field-specific errors
-      //     const errorMessages = Object.entries(data.message)
-      //       .map(([field, errors]) => `${field}: ${errors.join(', ')}`)
-      //       .join('\n');
-      //     setError(errorMessages);
-      //   } else {
-      //     setError(data.message || 'Registration failed');
-      //   }
-      // }
-  //   } catch (err) {
-  //     setError('Network error. Please check your connection.');
-  //     console.error('Signup error:', err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+      
         } catch (err) {
           console.error('Signup error:', err);
+          let errorMessage = 'Registration failed';
+          let debugMessage = '';
       // Handle different types of errors
-      if (err.response) {
-        // Server responded with error status
-        const errorData = err.response.data;
-        if (errorData.message && typeof errorData.message === 'object') {
-          // Handle field-specific errors
-          const errorMessages = Object.entries(errorData.message)
-            .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
-            .join('\n');
-          setError(errorMessages);
-        } else if (errorData.message) {
-          setError(errorData.message);
-        } else if (errorData.error) {
-          setError(errorData.error);
-        } else {
-          setError(errorData.message || 'Registration failed');
-        }
-      } else if (err.request) {
-        // Network error
-        setError('Network error. Please check your connection.');
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        errorMessage = 'Network error. Unable to connect to server.';
+        debugMessage = `Network error: ${err.message}. This usually indicates CORS issues or server unavailability.`;
+      } else if (err.message.includes('HTTP')) {
+        errorMessage = err.message;
+        debugMessage = `Server error: ${err.message}`;
       } else {
-        // Other error
-        setError('An unexpected error occurred.');
+        errorMessage = 'An unexpected error occurred';
+        debugMessage = `Unexpected error: ${err.message}`;
       }
-      console.error('Signup error:', err);
+      
+      setError(errorMessage);
+      setDebugInfo(debugMessage);
     } finally {
       setLoading(false);
     }
@@ -271,25 +271,37 @@ const Signup = () => {
     cursor: 'pointer'
   };
 
-  const errorStyle = {
-    background: '#ffebee',
-    color: '#c62828',
-    padding: '10px',
-    borderRadius: '6px',
-    fontSize: '14px',
-    margin: '10px 0',
-    border: '1px solid #ef5350'
-  };
+  // const errorStyle = {
+  //   background: '#ffebee',
+  //   color: '#c62828',
+  //   padding: '10px',
+  //   borderRadius: '6px',
+  //   fontSize: '14px',
+  //   margin: '10px 0',
+  //   border: '1px solid #ef5350'
+  // };
 
-  const successStyle = {
-    background: '#e8f5e8',
-    color: '#2e7d32',
-    padding: '10px',
-    borderRadius: '6px',
+  // const successStyle = {
+  //   background: '#e8f5e8',
+  //   color: '#2e7d32',
+  //   padding: '10px',
+  //   borderRadius: '6px',
+  //   fontSize: '14px',
+  //   margin: '10px 0',
+  //   border: '1px solid #4caf50'
+  // };
+  const messageStyle = (type) => ({
+    padding: '12px',
+    borderRadius: '8px',
     fontSize: '14px',
     margin: '10px 0',
-    border: '1px solid #4caf50'
-  };
+    border: `1px solid ${type === 'error' ? '#f44336' : type === 'success' ? '#4caf50' : '#2196f3'}`,
+    background: type === 'error' ? '#ffe6e6' : type === 'success' ? '#e8f5e8' : '#e3f2fd',
+    color: type === 'error' ? '#d32f2f' : type === 'success' ? '#2e7d32' : '#1976d2',
+    wordBreak: 'break-word',
+    fontSize: '12px',
+    fontFamily: 'monospace'
+  });
  return (
     <div style={bodyStyle}>
       <div style={wrapperStyle}>
@@ -373,14 +385,20 @@ const Signup = () => {
           </div> */}
 
           {error && (
-            <div style={errorStyle}>
-              {error}
+            <div style={messageStyle('error')}>
+              ❌ {error}
             </div>
           )}
 
           {success && (
-            <div style={successStyle}>
-              {success}
+            <div style={messageStyle('success')}>
+              ✅ {success}
+            </div>
+          )}
+
+          {debugInfo && (
+            <div style={messageStyle('debug')}>
+              🔍 Debug: {debugInfo}
             </div>
           )}
           
